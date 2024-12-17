@@ -33,13 +33,12 @@
                             <tr>
                                 <td>{{ $application->user->name }}</td>
                                 <td>{{ $application->user->email }}</td>
-                                <td>{{ $application->applied_date }}</td>
+                                <td>{{ \Carbon\Carbon::parse($application->applied_date)->format('d M, Y') }}</td>
                                 <td>{{ $application->user->mobile }}</td>
                                 <td>
-                                    @if($application->user->cv)
+                                    @if ($application->user->cv)
                                         <a href="{{ asset('storage/' . $application->user->cv) }}" target="_blank" class="btn btn-primary btn-sm">View</a>
                                         <a href="{{ asset('storage/' . $application->user->cv) }}" download class="btn btn-primary btn-sm">Download</a>
-
                                     @else
                                         No CV uploaded
                                     @endif
@@ -51,8 +50,5 @@
                 @endif
             </div>
         </div>
-
-
-
-
+    </div>
 @endsection

@@ -34,7 +34,7 @@
                                     <div class="info1">{{$job->jobType->name}} . {{$job->location}}</div>
                                 </td>
                                 <td>{{\Carbon\Carbon::parse($job->created_at)->format('d M, Y')}}</td>
-                                <td>130 Applications</td>
+                                <td>{{ $applicantsCount[$job->id] ?? 0 }} Applications</td>
 
                                 <td>
                                     <div class="action-dots float-end">

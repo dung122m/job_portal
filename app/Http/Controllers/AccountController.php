@@ -6,7 +6,8 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
-
+use App\Mail\AccountVerificationMail;
+use Illuminate\Support\Facades\Mail;
 class AccountController extends Controller
 {
     public function register()
@@ -14,31 +15,52 @@ class AccountController extends Controller
         return view('front.account.registration');
     }
 
+
+    public function verify($id, $hash)
+    {
+
+        $user = User::findOrFail($id);
+
+        if (sha1($user->email) === $hash && is_null($user->email_verified_at)) {
+            $user->email_verified_at = now();
+            $user->save();
+
+            session()->flash('success', 'Account verified successfully. You can now log in.');
+            return redirect()->route('login');
+        } else {
+            session()->flash('error', 'Invalid verification link or account already verified.');
+            return redirect()->route('login');
+        }
+    }
+
     public function processRegistration(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'name'             => ['required'],
+            'name'             => 'required',
             'email'            => 'required|email|unique:users',
             'password'         => 'required|min:5',
             'confirm_password' => 'required|same:password',
         ]);
 
         if ($validator->passes()) {
-            User::create([
+            $user = User::create([
                 'name'     => $request->name,
                 'email'    => $request->email,
                 'password' => bcrypt($request->password),
             ]);
 
-            // Flash thông báo thành công
-            session()->flash('success', 'Registration successful');
+            // Gửi email xác nhận
+            $user->sendEmailVerificationNotification();
 
-            return redirect()->route('login'); // Chuyển hướng về trang chủ hoặc trang khác
+
+            session()->flash('success', 'Registration successful. Please check your email to verify your account.');
+
+            return redirect()->route('login');
         } else {
             return redirect()->back()->withErrors($validator)->withInput();
         }
-
     }
+
 
     public function login()
     {
@@ -56,18 +78,23 @@ class AccountController extends Controller
             $credentials = $request->only('email', 'password');
 
             if (auth()->attempt($credentials)) {
-                // Authentication passed...
+                // Kiểm tra nếu tài khoản chưa xác nhận email
+                if (auth()->user()->email_verified_at === null) {
+                    auth()->logout();
+                    session()->flash('error', 'Your account is not verified. Please check your email for verification link.');
+                    return redirect()->back();
+                }
+
                 return redirect()->route('home');
             } else {
-                // Flash thông báo lỗi
                 session()->flash('error', 'Invalid email or password');
-
                 return redirect()->back();
             }
         } else {
             return redirect()->back()->withErrors($validator)->withInput();
         }
     }
+
 
     public function uploadCV(Request $request)
     {

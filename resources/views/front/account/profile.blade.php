@@ -4,11 +4,7 @@
 
     <section class="section-5 bg-2">
         <div class="container py-5">
-            @if(Session::has('success'))
-                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    {{ Session::get('success') }}
-                </div>
-            @endif
+            @include('front.layouts.message')
             <div class="row">
                 <div class="col">
                     <nav aria-label="breadcrumb" class="rounded-3 p-3 mb-4">

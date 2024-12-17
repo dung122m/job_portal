@@ -1,5 +1,4 @@
 @extends('front.layouts.app')
-
 @section('main')
     <section class="section-5">
         <div class="container my-5">
@@ -7,19 +6,11 @@
 
             <div class="row d-flex justify-content-center">
                 <div class="col-md-5">
-                    @if(Session::has('success'))
-                        <div class="alert alert-success">
-                            {{ Session::get('success') }}
-                        </div>
-                    @endif
+
                     <div class="card shadow border-0 p-5">
                         <h1 class="h3">Login</h1>
 
-                        @if(session('error'))
-                            <div class="alert alert-danger">
-                                {{ session('error') }}
-                            </div>
-                        @endif
+                        @include('front.layouts.message')
 
                         <form action="{{ route('account.processLogin') }}" method="POST">
                             @csrf

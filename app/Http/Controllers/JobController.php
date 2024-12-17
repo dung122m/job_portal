@@ -8,6 +8,7 @@ use App\Models\JobApplication;
 use App\Models\JobType;
 use App\Models\SavedJob;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class JobController extends Controller
 {
@@ -71,10 +72,17 @@ class JobController extends Controller
     {
         $user = auth()->user(); // Lấy thông tin user đang đăng nhập
         $jobs = Job::where('user_id', $user->id)->with('jobType')->orderBy('created_at', 'DESC')->paginate(5);
+        $applicantsCount = JobApplication::whereIn('job_id', $jobs->pluck('id'))
+            ->select('job_id', DB::raw('count(*) as count'))
+            ->groupBy('job_id')
+            ->pluck('count', 'job_id');
+
+
 
         return view('front.job.my-job', [
             'jobs' => $jobs,
-            'user' => $user
+            'user' => $user,
+            'applicantsCount' => $applicantsCount
         ]);
     }
 
@@ -166,7 +174,7 @@ class JobController extends Controller
         $job = Job::findOrFail($id); // Tìm job với ID tương ứng
         $job->delete(); // Xóa job
 
-        return redirect()->route('job.my-job')->with('success', 'Job deleted successfully'); // Chuyển hướng về trang danh sách công việc với thông báo
+        return redirect()->back()->with('success', 'Job deleted successfully'); // Chuyển hướng về trang danh sách công việc với thông báo
     }
 
 
@@ -250,9 +258,11 @@ class JobController extends Controller
         $jobApplied = Job::whereHas('jobApplications', function ($query) use ($user) {
             $query->where('user_id', $user->id);
         })->with('jobApplications')->paginate(5);
+
         return view('front.job.applied', [
             'jobApplied' => $jobApplied,
-            'user'       => $user
+            'user'       => $user,
+
         ]);
     }
 
@@ -285,12 +295,13 @@ class JobController extends Controller
         $savedJobs = Job::whereHas('savedJobs', function ($query) use ($user) {
             $query->where('user_id', $user->id);
         })->with('savedJobs')->paginate(5);
+
         return view('front.job.saved', compact('savedJobs','user'));
     }
 
     public function viewApplicants($id)
     {
-        $user    = auth()->user();
+        $user = auth()->user();
         // Lấy thông tin job theo ID và kiểm tra quyền sở hữu
         $job = Job::where('id', $id)->with('jobApplications')->first();
 
@@ -299,15 +310,16 @@ class JobController extends Controller
             return redirect()->route('job.my-job')->with('error', 'You are not authorized to view applicants for this job.');
         }
 
-        // Lấy danh sách người đã apply
-        $applicants = $job->jobApplications()->with('user')->get();
+        // Lấy danh sách người đã apply và loại bỏ các mục trùng lặp
+        $applicants = $job->jobApplications()->with('user')->distinct()->get();
 
         return view('front.job.applicants', [
-            'job'       => $job,
+            'job' => $job,
             'applicants' => $applicants,
-            'user'      => $user
+            'user' => $user
         ]);
     }
+
 
 
 

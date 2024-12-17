@@ -12,17 +12,22 @@ use Illuminate\Support\Facades\Route;
 | be assigned to the "web" middleware group. Make something great!
 |
 */
-
+\Illuminate\Support\Facades\Auth::routes(['verify' => true]);
 Route::get('/', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
-
+Route::get('email/verify/{id}/{hash}', [App\Http\Controllers\AccountController::class, 'verify'])->name('verification.verify') ->middleware(['signed']);
 Route::group(['middleware' => 'guest'], function () {
     Route::get('account/registration', [App\Http\Controllers\AccountController::class, 'register'])->name('registration');
     Route::get('account/login', [App\Http\Controllers\AccountController::class, 'login'])->name('login');
     Route::post('account/process-register', [App\Http\Controllers\AccountController::class, 'processRegistration'])->name('account.processRegistration');
     Route::post('account/process-login', [App\Http\Controllers\AccountController::class, 'processLogin'])->name('account.processLogin');
+
+
 });
 
+Route::group([ 'prefix' => 'admin'], function () {
+    Route::get('/dashboard', [App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('admin.dashboard');
 
+});
 Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
 
     Route::get('/profile', [App\Http\Controllers\ProfileController::class, 'profile'])->name('account.profile');
